@@ -195,6 +195,7 @@ var tree = {
 				}
 				
 				this._remove(node, node.childs[j], j, val);
+				if (node.keys.length < this.t - 1) this.mergeNodes(parent, node, i, val);
 				//if (parent) this.merge(parent, i);
 				// здесь нужна проверка на количество элементов в узле после удаления
 			} // ключ для удаления находится в текущей ноде
@@ -202,12 +203,17 @@ var tree = {
 				// для того, чтобы удалить ключ, надо позаимствовать ключ из дочерней ноды и 
 				// вызвать для нее рекурсивное удаления заимствованного ключа
 				if (exists(node.childs[j]) && node.childs[j].keys.length > this.t - 1) {
-					node.keys[j] = node.childs[j].keys[node.childs[j].keys.length - 1];
-					this._remove(node, node.childs[j], j, node.childs[j].keys[node.childs[j].keys.length - 1]);
+					var max = this.removeMax(node, node.childs[j]);
+					node.keys[j] = max;
+					//node.keys[j] = node.childs[j].keys[node.childs[j].keys.length - 1];
+					//this._remove(node, node.childs[j], j, node.childs[j].keys[node.childs[j].keys.length - 1]);
+					
 				} else if (exists(node.childs[j + 1]) && node.childs[j + 1].keys.length > this.t - 1) {
-					node.keys[j] = node.childs[j + 1].keys[0];
-					this._remove(node, node.childs[j + 1], j, node.childs[j + 1].keys[0]);
-				} else if (node.keys.length > this.t -1) {
+					var min = this.removeMin(node, node.childs[j + 1]);
+					node.keys[j] = min;
+					//node.keys[j] = node.childs[j + 1].keys[0];
+					//this._remove(node, node.childs[j + 1], j, node.childs[j + 1].keys[0]);
+				} else if (node.keys.length > this.t - 1) {
 					var next = j + 1, prev = j;
 					var newNode = {
 						keys  : [].concat(node.childs[prev].keys, node.keys[j], node.childs[next].keys),
@@ -217,10 +223,12 @@ var tree = {
 					node.childs.remove(next);
 					node.childs[prev] = newNode;
 					this._remove(node, node.childs[j], j, val);
+					
+					if (node == this.root && node.keys.length == 0) this.root = newNode;
 				} else {
 					// забор ноды у соседа
-					
-					this.mergeNodes(parent, i, val);
+					node = this.mergeNodes(parent, node, i, val);
+					this._remove(parent, node, i, val);
 				}
 			}
 		} // лист
@@ -244,12 +252,10 @@ var tree = {
 				node.keys.push(parent.keys[i]);
 				parent.keys[i] = parent.childs[i + 1].keys[0];
 				parent.childs[i + 1].keys.shift();
-				//this._remove(parent, parent.childs[i + 1], i + 1, parent.childs[i + 1].keys[0]);
 			} else if (exists(parent.childs[i - 1]) && parent.childs[i - 1].keys.length > this.t - 1) {
 				node.keys.unshift(parent.keys[i - 1]);
 				parent.keys[i - 1] = parent.childs[i - 1].keys[parent.childs[i - 1].keys.length - 1];
 				parent.childs[i - 1].keys.pop();
-				//this._remove(parent, parent.childs[i - 1], i - 1, parent.childs[i - 1].keys[parent.childs[i - 1].keys.length - 1]);
 			} else {
 				var next = i + 1, prev = i - 1;
 				
@@ -257,11 +263,9 @@ var tree = {
 				if (exists(parent.childs[prev])) {
 					newNode.keys = [].concat(parent.childs[prev].keys, parent.keys[i - 1], node.keys);
 					parent.keys.remove(i - 1);
-					//newNode.childs = [].concat(parent.childs[prev].childs, parent.childs[next].childs);
 				} else if (exists(parent.childs[next])) {
 					newNode.keys = [].concat(node.keys, parent.keys[i], parent.childs[next].keys);
 					parent.keys.remove(i);
-					//newNode.childs = [].concat(parent.childs[prev].childs, parent.childs[next].childs);
 				}
 				parent.childs[i] = newNode;
 				
@@ -270,52 +274,72 @@ var tree = {
 				} else if (exists(parent.childs[next])) {
 					parent.childs.remove(next);
 				}
-				
-				if (parent == this.root && parent.keys.length == 0) {
-					this.root = parent = newNode;
-				}
 			}
 		}
 	},
 	
-	mergeNodes: function(parent, i, val) {
-		var node = parent.childs[i];
-		if (exists(parent.childs[i - 1]) && parent.childs[i - 1].keys.length > this.t -1) {
-			// здесь, по-ходу, нельзя использовать shift
-			// TODO проверить!
-			node.keys.unshift(parent.keys[i - 1]);
-			node.childs.unshift(parent.childs[i - 1].childs.pop());
-			parent.keys[i - 1] = parent.childs[i - 1].keys.pop();
-			this._remove(parent, parent.childs[i], i, val);
-		} else if (exists(parent.childs[i + 1]) && parent.childs[i + 1].keys.length > this.t - 1) {
-			node.keys.push(parent.keys[i]);
-			node.childs.push(parent.childs[i + 1].childs.shift());
-			parent.keys[i] = parent.childs[i + 1].keys.shift();
-			this._remove(parent, parent.childs[i], i, val);
-		} else {
-			// у соседних нод тоже минимальное количество ключей
-			// надо выполнить слияние нод
-			if (exists(parent.childs[i - 1])) {
-				var sibling =  parent.childs[i - 1];
-				var newNode = {
-					keys: [].concat(sibling.keys, parent.keys[i - 1], node.keys),
-					childs: [].concat(sibling.childs, node.childs),
-				};
-				parent.childs[i] = newNode;
-				parent.keys.remove(i - 1);
-				parent.childs.remove(i - 1);
-				this._remove(parent, newNode, i - 1, val);
+	mergeNodes: function(parent, node, i, val) {
+		if (parent != null) {
+			var resNode = parent.childs[i];
+			
+			if (exists(parent.childs[i - 1]) && parent.childs[i - 1].keys.length > this.t -1) {
+				// здесь, по-ходу, нельзя использовать shift
+				// TODO проверить!
+				node.keys.unshift(parent.keys[i - 1]);
+				node.childs.unshift(parent.childs[i - 1].childs.pop());
+				parent.keys[i - 1] = parent.childs[i - 1].keys.pop();
+			} else if (exists(parent.childs[i + 1]) && parent.childs[i + 1].keys.length > this.t - 1) {
+				node.keys.push(parent.keys[i]);
+				node.childs.push(parent.childs[i + 1].childs.shift());
+				parent.keys[i] = parent.childs[i + 1].keys.shift();
 			} else {
-				var sibling =  parent.childs[i + 1];
-				var newNode = {
-					keys: [].concat(node.keys, parent.keys[i], sibling.keys),
-					childs: [].concat(node.childs, sibling.childs),
-				};
-				parent.childs[i] = newNode;
-				parent.keys.remove(i);
-				parent.childs.remove(i + 1);
-				this._remove(parent, newNode, i, val);
+				// у соседних нод тоже минимальное количество ключей
+				// надо выполнить слияние нод
+				if (exists(parent.childs[i - 1])) {
+					var sibling =  parent.childs[i - 1];
+					var newNode = {
+						keys: [].concat(sibling.keys, parent.keys[i - 1], node.keys),
+						childs: [].concat(sibling.childs, node.childs),
+					};
+					parent.childs[i] = newNode;
+					parent.keys.remove(i - 1);
+					parent.childs.remove(i - 1);
+				} else if (exists(parent.childs[i + 1])) {
+					var sibling =  parent.childs[i + 1];
+					var newNode = {
+						keys: [].concat(node.keys, parent.keys[i], sibling.keys),
+						childs: [].concat(node.childs, sibling.childs),
+					};
+					parent.childs[i] = newNode;
+					parent.keys.remove(i);
+					parent.childs.remove(i + 1);
+				}
+				resNode = newNode;
 			}
+		} else {
+			if (node.keys.length == 0) this.root = node.childs[0];
+			resNode = this.root;
+		}
+		return resNode;
+	},
+	
+	removeMin: function(parent, node) {
+		if (node.childs.length > 0) {
+			return this.removeMin(node, node.childs[0]);
+		} else {
+			var res = node.keys[0];
+			this._remove(parent, node, 0, node.keys[0]);
+			return res;
+		}
+	},
+	
+	removeMax: function(parent, node) {
+		if (node.childs.length > 0) {
+			return this.removeMax(node, node.childs[node.childs.length - 1]);
+		} else {
+			var res = node.keys[node.keys.length - 1];
+			this._remove(parent, node, parent.childs.length - 1, node.keys[node.keys.length - 1]);
+			return res;
 		}
 	}
 };
@@ -457,24 +481,25 @@ tree.add('S');
 tree.add('H');
 tree.add('I');
 tree.add('J');
-tree.add('K');
-tree.add('T');
-tree.add('U');
-tree.add('V');
-tree.add('a');
-tree.add('b');
-tree.add('c');
-tree.add('d');
-tree.add('e');
-tree.add('f');
-tree.add('g');
-tree.remove('X');
-tree.remove('b');
-tree.remove('a');
-tree.remove('A');
-tree.remove('Y');
-tree.remove('Z');
-//tree.remove('D');
+//tree.add('K');
+//tree.add('T');
+//tree.add('U');
+//tree.add('V');
+//tree.add('a');
+//tree.add('b');
+//tree.add('c');
+//tree.add('d');
+//tree.add('e');
+//tree.add('f');
+//tree.add('g');
+//tree.remove('X');
+//tree.remove('b');
+//tree.remove('a');
+//tree.remove('A');
+//tree.remove('Y');
+//tree.remove('Z');
+//tree.remove('V');
+//tree.remove('c');
 
 treeView.tree = tree;
 treeView.render();
