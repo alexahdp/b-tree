@@ -32,7 +32,7 @@
 'use strict';
 
 function exists(v) {
-	return typeof v !== 'undefined'
+	return v != null;
 };
 
 Array.prototype.remove = function(from, to) {
@@ -163,13 +163,6 @@ var tree = {
 	remove: function(val) {
 		var node = this.root;
 		this._remove(null, node, 0, val);
-		//if (node.keys.length == 0) {
-		//	var newRoot = {
-		//		childs: [].concat(node.childs[0].childs, node.childs[1].childs),
-		//		keys: [].concat(node.keys[0].childs, node.keys[1].childs)
-		//	}
-		//	this.root = newRoot;
-		//}
 	},
 	
 	// удаление элемента из дочернего узла или листа
@@ -196,23 +189,14 @@ var tree = {
 				
 				this._remove(node, node.childs[j], j, val);
 				if (node.keys.length < this.t - 1) this.mergeNodes(parent, node, i, val);
-				//if (parent) this.merge(parent, i);
-				// здесь нужна проверка на количество элементов в узле после удаления
-			} // ключ для удаления находится в текущей ноде
+			}
 			else {
 				// для того, чтобы удалить ключ, надо позаимствовать ключ из дочерней ноды и 
 				// вызвать для нее рекурсивное удаления заимствованного ключа
 				if (exists(node.childs[j]) && node.childs[j].keys.length > this.t - 1) {
-					var max = this.removeMax(node, node.childs[j]);
-					node.keys[j] = max;
-					//node.keys[j] = node.childs[j].keys[node.childs[j].keys.length - 1];
-					//this._remove(node, node.childs[j], j, node.childs[j].keys[node.childs[j].keys.length - 1]);
-					
+					node.keys[j] = this.removeMax(node, node.childs[j]);
 				} else if (exists(node.childs[j + 1]) && node.childs[j + 1].keys.length > this.t - 1) {
-					var min = this.removeMin(node, node.childs[j + 1]);
-					node.keys[j] = min;
-					//node.keys[j] = node.childs[j + 1].keys[0];
-					//this._remove(node, node.childs[j + 1], j, node.childs[j + 1].keys[0]);
+					node.keys[j] = this.removeMin(node, node.childs[j + 1]);
 				} else if (node.keys.length > this.t - 1) {
 					var next = j + 1, prev = j;
 					var newNode = {
@@ -236,7 +220,6 @@ var tree = {
 			// удаляем ключ
 			var j = this.findInNode(node, val);
 			if (j >= 0) {
-				//node.keys = [].concat(node.keys.slice(0, j), node.keys.slice(j + 1));
 				node.keys.remove(j);
 				this.merge(parent, i);
 			}
@@ -481,17 +464,17 @@ tree.add('S');
 tree.add('H');
 tree.add('I');
 tree.add('J');
-//tree.add('K');
-//tree.add('T');
-//tree.add('U');
-//tree.add('V');
-//tree.add('a');
-//tree.add('b');
-//tree.add('c');
-//tree.add('d');
-//tree.add('e');
-//tree.add('f');
-//tree.add('g');
+tree.add('K');
+tree.add('T');
+tree.add('U');
+tree.add('V');
+tree.add('a');
+tree.add('b');
+tree.add('c');
+tree.add('d');
+tree.add('e');
+tree.add('f');
+tree.add('g');
 //tree.remove('X');
 //tree.remove('b');
 //tree.remove('a');
