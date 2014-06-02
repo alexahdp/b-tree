@@ -86,7 +86,11 @@ h <= logt((n + 1) / 2)
 Литература:
 
 http://neerc.ifmo.ru/wiki/index.php?title=B-%D0%B4%D0%B5%D1%80%D0%B5%D0%B2%D0%BE#.D0.A3.D0.B4.D0.B0.D0.BB.D0.B5.D0.BD.D0.B8.D0.B5_.D0.BA.D0.BB.D1.8E.D1.87.D0.B0
+
 http://habrahabr.ru/post/114154/
+
 http://ru.wikipedia.org/wiki/B-%D0%B4%D0%B5%D1%80%D0%B5%D0%B2%D0%BE
+
 http://citforum.ru/programming/theory/sorting/sorting2.shtml#5
+
 http://www.cse.ohio-state.edu/~gurari/course/cis680/cis6802.html#QQ2-45-87
