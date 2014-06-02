@@ -28,6 +28,14 @@ var testMap = {
 		nodeMergeRoot: 1,
 		
 		// слияние при удалении от корневого (с уменьшением высоты дерева)
+	},
+	valid: {
+		one: 1,
+		two: 1,
+		three: 1
+	},
+	invalid: {
+		one: 1,
 	}
 };
 
@@ -625,3 +633,126 @@ if (testMap.remove.nodeMergeRoot) {
 	});
 }
 // ============== End Remove ============================
+
+if (testMap.invalid.one) {
+	test('Тест невалидности дерева', function() {
+		tree.t = 3;
+		tree.root = {
+			keys: ['b', 'A'],
+			childs: []
+		};
+		ok( ! tree.testTree(), 'df');
+	});
+	
+	test('Тест невалидности дерева', function() {
+		tree.t = 3;
+		tree.root = {
+			keys: ['L', 'O'],
+			childs: [
+				{keys: ['A'], childs: []}
+			]
+		};
+		ok( ! tree.testTree(), 'df');
+	});
+	
+	test('Тест невалидности дерева', function() {
+		tree.t = 3;
+		tree.root = {
+			keys: ['L', 'X'],
+			childs: [
+				{keys: ['C', 'F', 'I'], childs: []},
+				{keys: ['O', 'R', 'U'], childs: []},
+				{keys: ['a', 'd', 'l', 'm', 'o', 'z'], childs: []}
+			]
+		};
+		ok( ! tree.testTree(), 'df');
+	});
+}
+
+if (testMap.valid.one) {
+	test('Тест валидности дерева 1', function() {
+		
+		tree.t = 3;
+		tree.root = {keys: [], childs: []};
+		'LCFORZ'.split('').forEach(function(v) {
+			tree.add(v);
+		});
+		ok(tree.testTree(), 'df');
+	});
+	
+	test('Тест валидности дерева 2', function() {
+		
+		tree.t = 3;
+		tree.root = {keys: [], childs: []};
+		
+		'LCFORZANOPW1'.split('').forEach(function(v) {
+			tree.add(v);
+		});
+		
+		ok(tree.testTree(), 'df');
+	});
+	
+	test('Тест валидности дерева t = 3', function() {
+		
+		tree.t = 3;
+		tree.root = {keys: [], childs: []};
+		
+		'aLCv4FOfRZA3NOgPW1fU'.split('').forEach(function(v) {
+			tree.add(v);
+			ok(tree.testTree(), 'df');
+		});
+		
+		'a4fW'.split('').forEach(function(v) {
+			tree.remove(v);
+			ok(tree.testTree(), 'df');
+		});
+		
+		ok(tree.testTree(), 'df');
+	});
+}
+
+if (testMap.valid.two) {
+	test('Тест валидности дерева, t = 4', function() {
+		
+		tree.t = 4;
+		tree.root = {
+			keys: [],
+			childs: []
+		};
+		
+		'aLCv4FOfRZA3NOgPW1fU'.split('').forEach(function(v) {
+			tree.add(v);
+			ok(tree.testTree(), 'df');
+		});
+		
+		'a4fWUZ3v4RO'.split('').forEach(function(v) {
+			tree.remove(v);
+			ok(tree.testTree(), 'df');
+		});
+		
+		ok(tree.testTree(), 'df');
+	});
+}
+
+if (testMap.valid.three) {
+	test('Тест валидности дерева, t = 5', function() {
+		
+		tree.t = 5;
+		tree.root = {
+			keys: [],
+			childs: []
+		};
+		
+		'aLCv4FOfRZA3NOgPW1fUhksorvskln'.split('').forEach(function(v) {
+			tree.add(v);
+			ok(tree.testTree(), 'df');
+		});
+		
+		'nvsknWPA1aLC'.split('').forEach(function(v) {
+			tree.remove(v);
+			ok(tree.testTree(), 'df');
+		});
+		
+		ok(tree.testTree(), 'df');
+	});
+}

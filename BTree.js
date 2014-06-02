@@ -1,35 +1,6 @@
-/**
- * B-дерево
- *
- * http://neerc.ifmo.ru/wiki/index.php?title=B-%D0%B4%D0%B5%D1%80%D0%B5%D0%B2%D0%BE#.D0.A3.D0.B4.D0.B0.D0.BB.D0.B5.D0.BD.D0.B8.D0.B5_.D0.BA.D0.BB.D1.8E.D1.87.D0.B0
- * http://habrahabr.ru/post/114154/
- * http://ru.wikipedia.org/wiki/B-%D0%B4%D0%B5%D1%80%D0%B5%D0%B2%D0%BE
- * http://citforum.ru/programming/theory/sorting/sorting2.shtml#5
- *
- * http://www.cse.ohio-state.edu/~gurari/course/cis680/cis6802.html#QQ2-45-87
- *
- * Каждый узел, кроме корня, содержит не менее t - 1 ключей, и каждый внутренний узел имеет
- *     по меньшей мере t дочерних узлов. Если дерево не является пустым, корень должен содержать
- *     как минимум один ключ.
- * Каждый узел, кроме корня, содержит не более 2t - 1 ключей и не более чем 2t сыновей во внутренних узлах
- * Корень содержит от 1 до 2t - 1 ключей, если дерево не пусто и от 2 до 2t детей при высоте большей 0.
- * Каждый узел дерева, кроме листьев, содержащий ключи k_1, ..., k_n, имеет n + 1 сына. i-й сын
- *     содержит ключи из отрезка [k_{i - 1}; k_i],\:  k_0 = -\infty,\: k_{n + 1} = \infty.
- * Ключи в каждом узле упорядочены по неубыванию.
- * Все листья находятся на одном уровне.
- *
- * t >= 2
- *
- * t -1 <= node.keys <= 2t -1
- * t <= node.childs <= 2t
- *
- * 1 <= root.keys <= 2t - 1
- * 2t <= root.childs <= 2t
- *
- * h <= logt((n + 1) / 2)
- */
-
 'use strict';
+
+var doc = document;
 
 function exists(v) {
 	return v != null;
@@ -40,10 +11,13 @@ Array.prototype.remove = function(from, to) {
 	this.length = from < 0 ? this.length + from : from;
 	return this.push.apply(this, rest);
 };
-var doc = document;
 
-doc.getSvg = function(type) {
-	return doc.createElementNS("http://www.w3.org/2000/svg", type);
+doc.getSvg = function(type, props) {
+	var el = doc.createElementNS("http://www.w3.org/2000/svg", type);
+	if (typeof props) {
+		el.setAttr(props);
+	}
+	return el;
 }
 
 Element.prototype.on = doc.addEventListener;
@@ -61,13 +35,19 @@ doc.geByClass1 = function(classNmae) {
 }
 
 Element.prototype.setAttr = function(attr, val) {
-	this.setAttributeNS(null, attr, val);
+	if (typeof attr == 'object') {
+		for (var k in attr) {
+			this.setAttributeNS(null, k, attr[k]);
+		};
+	} else {
+		this.setAttributeNS(null, attr, val);
+	}
+	
 	return this;
 }
 
+
 var tree = {
-	t: 3,
-	
 	add: function(val) {
 		var node = this.root;
 		this._add(null, node, val);
@@ -324,6 +304,52 @@ var tree = {
 			this._remove(parent, node, parent.childs.length - 1, node.keys[node.keys.length - 1]);
 			return res;
 		}
+	},
+	
+	testTree: function() {
+		try {
+			this._testTree(null, 0, this.root);
+			return true;
+		} catch(e) {
+			console.log(e);
+			return false;
+		}
+	},
+	
+	_testTree: function(parent, i, node) {
+		
+		if (node !== this.root) {
+			if (node.keys.length < this.t - 1 || node.keys.length > 2 * this.t - 1) throw('Error, invalid tree');
+			if (node.childs.length !== 0 && (node.childs.length < this.t || node.childs.length > 2 * this.t)) {console.log(node); throw('Ошибка 2, дерево невалидно!');}
+		} else {
+			if (node.keys.length < 1 || node.keys.length > 2 * this.t - 1) {console.log(node); throw('Error, invalid tree');}
+			if (node.childs.length > 2 * this.t) {console.log(node); throw('Error, invalid tree');}
+		}
+		
+		if (node.childs.length > 0) {
+			for (var n = 0; n < node.keys.length - 1; n++) {
+				if (node.keys[n] >= node.keys[n + 1]) throw('Error, invalid tree');
+				if (node.keys[n] <= this._testTree(node, n, node.childs[n])) throw('Error, invalid tree');
+			}
+			var nn = node.keys.length - 1;
+			if (node.keys[nn] <= this._testTree(node, nn, node.childs[nn])) throw('Error, invalid tree');
+			if (node.keys[nn] >= this._testTree(node, nn + 1, node.childs[nn + 1])) throw('Error, invalid tree');
+		} else {
+			//leaf
+			for (var j = 1; j < node.keys.length; j++) {
+				if (node.keys[j] < node.keys[j - 1]) throw('Error, invalid tree');
+			}
+		}
+		
+		return node.keys[node.keys.length - 1];
+	},
+	
+	fillTree: function() {
+		var me = this;
+		me.root = {keys: [], childs: []};
+		'ZmCogBlreIGUpKzxwyhqbnFETtRHkvJjLDsfuXcQOPVAWiaSYdNM'.split('').forEach(function(v) {
+			me.add(v);
+		});
 	}
 };
 
@@ -399,32 +425,39 @@ var treeView = {
 	 * @param {Int} r Radius
 	 */
 	renderNode: function(vals, x, y, r, prev, k) {
+		vals = vals.join(',');
 		var container = doc.getSvg('g');
+		var fs = Math.floor(24 - 2 * k);
 		
-		var obj = doc.getSvg('rect')
-			.setAttr('x', x - 200 / (2 * k))
-			.setAttr('y', y - 25)
-			.setAttr('width', 200 / k)
-			.setAttr('height', 35)
-			.setAttr('class', 'node');
+		var w = fs * vals.length * 0.85;
 		
-		var text = doc.getSvg('text')
-			.setAttr('x', x - vals.length * 6)
-			.setAttr('y', y - 3)
-			.setAttr('class', 'node-text')
-			.setAttr('font-size', Math.floor(24 - 3 * k));
+		var obj = doc.getSvg('rect', {
+			x     : x - w / 2,
+			y     : y - 25,
+			width : w,
+			height: 35,
+			class : 'node'
+		});
+		
+		var text = doc.getSvg('text', {
+			x          : x - w / 4,
+			y          : y - 3,
+			class      : 'node-text',
+			'font-size': fs
+		});
 		
 		if (prev) {
-			var line = doc.getSvg('line')
-				.setAttr('x1', prev.x)
-				.setAttr('y1', prev.y + 10)
-				.setAttr('x2', x)
-				.setAttr('y2', y)
-				.setAttr('class', 'line');
+			var line = doc.getSvg('line', {
+				x1   : prev.x,
+				y1   : prev.y + 10,
+				x2   : x,
+				y2   : y,
+				class: 'line'
+			});
 			doc.ge('area').appendChild(line);
 		}
 		
-		text.appendChild(doc.createTextNode(vals.join(', ')));
+		text.appendChild(doc.createTextNode(vals));
 		
 		container.appendChild(obj);
 		container.appendChild(text);
@@ -434,55 +467,43 @@ var treeView = {
 	remove: function(val) {
 		this.tree.remove(val);
 		this.redraw();
+	},
+	
+	fillTree: function() {
+		tree.fillTree();
 	}
 };
 
+doc.ge('add-elem-but').on('click', function() {
+	var val = doc.ge('new-elem').value;
+	if (val == '') return alert('value for add is empty');
+	treeView.add(val);
+	doc.ge('new-elem').value = '';
+});
 
-tree.root = {keys: ['a'], childs: []};
-tree.root = {
-	keys: ['G'],
-	childs: [
-		{
-			keys: ['A', 'D'],
-			childs: [
-				{keys: ['1', '2', '3'], childs: []},
-				{keys: ['B', 'C'], childs: []},
-				{keys: ['E', 'F'], childs: []}
-			]
-		},
-		{
-			keys: ['O', 'W'],
-			childs: [
-				{keys: ['L', 'M', 'N'], childs: []},
-				{keys: ['P', 'Q', 'R'], childs: []},
-				{keys: ['X', 'Y', 'Z'], childs: []}
-			]
-		}
-	]
-};
-tree.add('S');
-tree.add('H');
-tree.add('I');
-tree.add('J');
-tree.add('K');
-tree.add('T');
-tree.add('U');
-tree.add('V');
-tree.add('a');
-tree.add('b');
-tree.add('c');
-tree.add('d');
-tree.add('e');
-tree.add('f');
-tree.add('g');
-//tree.remove('X');
-//tree.remove('b');
-//tree.remove('a');
-//tree.remove('A');
-//tree.remove('Y');
-//tree.remove('Z');
-//tree.remove('V');
-//tree.remove('c');
+doc.ge('remove-elem-but').on('click', function() {
+	var val = doc.ge('removed-elem').value;
+	if (val == '') return alert('value for remove is empty');
+	treeView.remove(val);
+	doc.ge('removed-elem').value = '';
+});
+
+doc.ge('set-tree-t').on('click', function() {
+	var t = doc.ge('tree-t').value;
+	
+	if (t == '') return alert('t is empty');
+	
+	t = parseInt(t);
+	
+	if (t < 2) return alert('error, t must be greater then 2');
+	
+	tree.t = t;
+	treeView.fillTree();
+	treeView.redraw();
+});
+
+tree.t = 3;
 
 treeView.tree = tree;
+treeView.fillTree();
 treeView.render();
